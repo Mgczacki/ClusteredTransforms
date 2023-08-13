@@ -30,10 +30,10 @@ def test_normal_use_case(X):
 
     assert np.allclose(X, inv_transformed_X, rtol=1e-5, atol=1e-5)
 
-    # Test: All values are below x
+    # Test: All values are below the upper image cap.
     assert np.all(transformed_X <= image_upper_cap)
 
-    # Test: All values are above y
+    # Test: All values are above the lower image cap.
     assert np.all(transformed_X >= image_lower_cap)
 
 

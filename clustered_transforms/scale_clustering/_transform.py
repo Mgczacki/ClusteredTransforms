@@ -16,7 +16,11 @@ from ._functions import (
 
 class ScaleClusterTransformer(BaseEstimator, TransformerMixin):
     """A transformer that identifies scale-aware clusters of data, and maps them to a
-    bounded projection space based on their importance/weight."""
+    bounded projection space based on their importance/weight.
+
+    Parameters
+    ----------
+    """
 
     def __init__(
         self,
@@ -47,6 +51,15 @@ class ScaleClusterTransformer(BaseEstimator, TransformerMixin):
         self.negative_strategy = negative_strategy
 
     def fit(self, X: np.ndarray, y: Any = None) -> Self:
+        """Fit function.
+
+        Parameters
+        ----------
+        X: np.ndarray
+            The data to fit to.
+        y: Any, default = None
+            Unused. Kept for compatibility.
+        """
         self.clusters_: List[Cluster] = []
 
         negative_mask = X < 0
@@ -74,10 +87,28 @@ class ScaleClusterTransformer(BaseEstimator, TransformerMixin):
         return self
 
     def fit_transform(self, X: np.ndarray, y: Any = None) -> np.ndarray:
+        """Fit and then transform.
+
+        Parameters
+        ----------
+        X: np.ndarray
+            The data to fit to.
+        y: Any, default = None
+            Unused. Kept for compatibility.
+        """
         self.fit(X)
         return self.transform(X)
 
     def transform(self, X: np.ndarray, y: Any = None) -> np.ndarray:
+        """Transform data.
+
+        Parameters
+        ----------
+        X: np.ndarray
+            The data to transform.
+        y: Any, default = None
+            Unused. Kept for compatibility.
+        """
         negative_mask = X < 0
 
         if np.any(negative_mask):
@@ -97,6 +128,15 @@ class ScaleClusterTransformer(BaseEstimator, TransformerMixin):
         return np.vectorize(self._f)(X)
 
     def inverse_transform(self, X: np.ndarray, y: Any = None) -> np.ndarray:
+        """Inverse transform.
+
+        Parameters
+        ----------
+        X: np.ndarray
+            The data to inverse transform.
+        y: Any, default = None
+            Unused. Kept for compatibility.
+        """
         return np.vectorize(self._inv)(X)
 
     def _generate_clusters(self, points, negative=False):

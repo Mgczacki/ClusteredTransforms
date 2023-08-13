@@ -42,6 +42,7 @@ path = "clustered_transforms/__about__.py"
 dependencies = [
   "pytest",
   "pytest-cov",
+  "hypothesis"
 ]
 [tool.hatch.envs.default.scripts]
 cov = "pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=clustered_transforms --cov=tests"
