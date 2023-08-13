@@ -4,14 +4,14 @@ import numpy as np
 
 
 def logarithmic_interpolation(
-    x: Union[float, np.array], x1: float, y1: float, x2: float, y2: float
-) -> Union[float, np.array]:
+    x: Union[float, np.ndarray], x1: float, y1: float, x2: float, y2: float
+) -> Union[float, np.ndarray]:
     """Perform logarithmic interpolation between two points (x1, y1) and (x2, y2) for
     the value x.
 
     Parameters
     ----------
-    x: float | np.Array
+    x: float | np.ndarray
         The value(s) for which interpolation is required.
     x1: float
         The x-coordinate of the first known point.
@@ -38,14 +38,14 @@ def logarithmic_interpolation(
 
 
 def inv_logarithmic_interpolation(
-    y: Union[float, np.array], x1: float, y1: float, x2: float, y2: float
-) -> Union[float, np.array]:
+    y: Union[float, np.ndarray], x1: float, y1: float, x2: float, y2: float
+) -> Union[float, np.ndarray]:
     """Invert the logarithmic interpolation between two points (x1, y1) and (x2, y2) for
     the value x.
 
     Parameters
     ----------
-    y: float | np.Array
+    y: float | np.ndarray
         The value(s) for which inverse interpolation is required.
     x1: float
         The x-coordinate of the first known point.
@@ -73,17 +73,17 @@ def inv_logarithmic_interpolation(
 
 
 def scaled_logistic(
-    x: Union[float, np.array],
+    x: Union[float, np.ndarray],
     lower: float = 0,
     upper: float = 1,
     a: float = 1,
     x0: float = 0,
-) -> Union[float, np.array]:
+) -> Union[float, np.ndarray]:
     """A scaled generalized logistic function.
 
     Parameters
     ----------
-    x: float | np.Array
+    x: float | np.ndarray
         Input value(s).
     lower: float, default = 0
         The lower image bound.
@@ -98,17 +98,17 @@ def scaled_logistic(
 
 
 def inv_scaled_logistic(
-    y: Union[float, np.array],
+    y: Union[float, np.ndarray],
     lower: float = 0,
     upper: float = 1,
     a: float = 1,
     x0: float = 0,
-) -> Union[float, np.array]:
+) -> Union[float, np.ndarray]:
     """Inverse of the scaled generalized logistic function.
 
     Parameters
     ----------
-    y: float | np.Array
+    y: float | np.ndarray
         Input value(s).
     lower: float, default = 0
         The lower image bound.

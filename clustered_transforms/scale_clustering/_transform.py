@@ -1,6 +1,9 @@
+from typing import Any, List
+
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.cluster import MeanShift
+from typing_extensions import Self
 
 from ._cluster import Cluster
 from ._functions import (
@@ -12,6 +15,9 @@ from ._functions import (
 
 
 class ScaleClusterTransformer(BaseEstimator, TransformerMixin):
+    """A transformer that identifies scale-aware clusters of data, and maps them to a
+    bounded projection space based on their importance/weight."""
+
     def __init__(
         self,
         left_cap=None,
@@ -25,6 +31,7 @@ class ScaleClusterTransformer(BaseEstimator, TransformerMixin):
         cluster_orders_of_magnitude=1,
         tail_midpoint_ratio=0.5,
         eps=1e-9,
+        negative_strategy="zero",
     ) -> None:
         self.left_cap = left_cap
         self.right_cap = right_cap
@@ -37,18 +44,66 @@ class ScaleClusterTransformer(BaseEstimator, TransformerMixin):
         self.cluster_orders_of_magnitude = cluster_orders_of_magnitude
         self.tail_midpoint_ratio = tail_midpoint_ratio
         self.eps = eps
+        self.negative_strategy = negative_strategy
 
-    def fit(self, X: np.array, y=None):
+    def fit(self, X: np.ndarray, y: Any = None) -> Self:
+        self.clusters_: List[Cluster] = []
+
+        negative_mask = X < 0
+
+        if np.any(negative_mask):
+            if self.negative_strategy in (None, "disallow"):
+                raise ValueError(
+                    "Dataset contains negative values but the "
+                    f"negative_strategy is {self.negative_strategy}."
+                )
+            elif self.negative_strategy == "zero":
+                X = np.copy(X)
+                X[negative_mask] = 0
+            elif self.negative_strategy == "mirror":
+                raise NotImplementedError("Mirror strategy not supported yet.")
+                X_neg = X[negative_mask]
+                X = X[~negative_mask]
+                self._generate_clusters(X_neg, negative=True)
+            else:
+                raise ValueError(f"Unknown negative_strategy: {self.negative_strategy}")
+
         self._generate_clusters(X)
         self._init_ranges()
 
         return self
 
-    def _generate_clusters(self, points):
+    def fit_transform(self, X: np.ndarray, y: Any = None) -> np.ndarray:
+        self.fit(X)
+        return self.transform(X)
+
+    def transform(self, X: np.ndarray, y: Any = None) -> np.ndarray:
+        negative_mask = X < 0
+
+        if np.any(negative_mask):
+            if self.negative_strategy in (None, "disallow"):
+                raise ValueError(
+                    "Dataset contains negative values but the "
+                    f"negative_strategy is {self.negative_strategy}."
+                )
+            elif self.negative_strategy == "zero":
+                X = np.copy(X)
+                X[negative_mask] = 0
+            elif self.negative_strategy == "mirror":
+                raise NotImplementedError("Mirror strategy not supported yet.")
+            else:
+                raise ValueError(f"Unknown negative_strategy: {self.negative_strategy}")
+
+        return np.vectorize(self._f)(X)
+
+    def inverse_transform(self, X: np.ndarray, y: Any = None) -> np.ndarray:
+        return np.vectorize(self._inv)(X)
+
+    def _generate_clusters(self, points, negative=False):
         precision = self.precision
         cluster_orders_of_magnitude = self.cluster_orders_of_magnitude
 
-        data = np.sort(points)
+        data = np.sort(np.abs(points))
         points = data.reshape(-1, 1)  # Reshape to 2D array as sklearn expects
         points = np.log10(points + precision)
 
@@ -56,13 +111,15 @@ class ScaleClusterTransformer(BaseEstimator, TransformerMixin):
         ms = MeanShift(bandwidth=cluster_orders_of_magnitude / 2)
         ms.fit(points)
 
-        self.clusters = []
+        clusters = []
 
         for i, _ in enumerate(ms.cluster_centers_):
             cluster_data = data[ms.labels_ == i]
-            self.clusters.append(Cluster(cluster_data))
+            clusters.append(Cluster(cluster_data, negative=negative))
 
-        self.clusters = sorted(self.clusters, key=lambda p: p.mean)
+        clusters = sorted(clusters, key=lambda p: p.mean)
+
+        self.clusters_ = self.clusters_ + clusters
 
     def _init_ranges(self):
         image_range = self.image_upper_cap - self.image_lower_cap
@@ -78,13 +135,13 @@ class ScaleClusterTransformer(BaseEstimator, TransformerMixin):
 
         if image_range <= 0:
             raise ValueError(
-                "Invalid uncertainty configuration."
+                "Invalid uncertainty configuration. "
                 "Tails leave no space for spatial distribution."
             )
 
         self.image_range = image_range
 
-        cluster_weights = np.array([c.w for c in self.clusters])
+        cluster_weights = np.array([c.w for c in self.clusters_])
         total_cluster_weight = np.sum(cluster_weights)
 
         cumulative_weight = 0
@@ -95,7 +152,7 @@ class ScaleClusterTransformer(BaseEstimator, TransformerMixin):
 
         left_area = image_range * self.left_tail_uncertainty
 
-        for i, c in enumerate(self.clusters):
+        for i, c in enumerate(self.clusters_):
             c.n_w = c.w / total_cluster_weight
             if c.mass > 1:
                 c_displacement = (
@@ -111,7 +168,7 @@ class ScaleClusterTransformer(BaseEstimator, TransformerMixin):
             c.y_max = c.y_min + c_displacement
             cumulative_weight = cumulative_weight + c_displacement + c_inter
 
-    def f(self, val):
+    def _f(self, val):
         if np.isnan(val):
             return val
 
@@ -119,7 +176,7 @@ class ScaleClusterTransformer(BaseEstimator, TransformerMixin):
 
         last_c = None
 
-        for c in self.clusters:
+        for c in self.clusters_:
             if val < c.min:
                 if last_c is None:
                     # Left tail
@@ -155,13 +212,13 @@ class ScaleClusterTransformer(BaseEstimator, TransformerMixin):
             x0=last_c.max,
         )
 
-    def inv(self, val):
+    def _inv(self, val):
         if np.isnan(val):
             return val
 
         last_c = None
 
-        for c in self.clusters:
+        for c in self.clusters_:
             if val < c.y_min:
                 if last_c is None:
                     # Left tail

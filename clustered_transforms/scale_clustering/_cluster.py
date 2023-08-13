@@ -10,23 +10,35 @@ class Cluster:
         A list of points.
     """
 
-    def __init__(self, points: list):
+    def __init__(self, points: list, negative: bool = False):
         self.points = np.sort(points)
-        self.mean = np.mean(self.points)  # The mean of the points.
+        self.negative = negative  # If the Cluster is being used for negative values.
+        m = -1 if negative else 1
+
+        self.mean = m * np.mean(self.points)  # The mean of the points.
         self.std = np.std(self.points)  # The standard deviation of the points.
         self.mass = len(self.points)  # The number of points.
-        self.min = np.min(self.points)  # The minimum point.
-        self.max = np.max(self.points)  # The maximum point.
+        self.min = m * np.min(self.points)  # The minimum point.
+        self.max = m * np.max(self.points)  # The maximum point.
         self.w = self._get_w()  # The weight for the cluster.
         self.n_w = None  # The normalized weight for the cluster.
         self.y_max = None  # The image for the `self.max`.
         self.y_min = None  # The image for the `self.min`.
 
+    def __repr__(self) -> str:
+        return (
+            f"Cluster - ["
+            f"min: {self.min}, "
+            f"min: {self.max}, "
+            f"y_min: {self.y_min}, "
+            f"y_max: {self.y_max}]"
+        )
+
     def _get_w(self):
         """Calcualate the weight for the cluster."""
         if self.mass == 1:
             return 1
-        return np.log(max(1, self.std / self.mean) * self.mass) + 1
+        return np.log(max(1, self.std / np.abs(self.mean)) * self.mass) + 1
 
     def f(self, x):
         """Interpolation function for the cluster."""
