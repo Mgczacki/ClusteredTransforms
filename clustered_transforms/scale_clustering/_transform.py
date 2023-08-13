@@ -185,7 +185,7 @@ class ScaleClusterTransformer(BaseEstimator, TransformerMixin):
                         lower=self.image_lower_cap,
                         upper=self.image_lower_cap
                         + 2 * (c.y_min - self.image_lower_cap),
-                        a=np.log(3) / (self.tail_midpoint_ratio * c.min),
+                        a=np.log(3) / ((self.tail_midpoint_ratio * c.min) + self.eps),
                         x0=c.min,
                     )
                 else:
@@ -208,7 +208,7 @@ class ScaleClusterTransformer(BaseEstimator, TransformerMixin):
             val,
             lower=self.image_upper_cap - 2 * (self.image_upper_cap - last_c.y_max),
             upper=self.image_upper_cap,
-            a=np.log(3) / (self.tail_midpoint_ratio * last_c.max),
+            a=np.log(3) / ((self.tail_midpoint_ratio * c.min) + self.eps),
             x0=last_c.max,
         )
 
@@ -222,13 +222,17 @@ class ScaleClusterTransformer(BaseEstimator, TransformerMixin):
             if val < c.y_min:
                 if last_c is None:
                     # Left tail
-                    return inv_scaled_logistic(
-                        val,
-                        lower=self.image_lower_cap,
-                        upper=self.image_lower_cap
-                        + 2 * (c.y_min - self.image_lower_cap),
-                        a=np.log(3) / (self.tail_midpoint_ratio * c.min),
-                        x0=c.min,
+                    return (
+                        inv_scaled_logistic(
+                            val,
+                            lower=self.image_lower_cap,
+                            upper=self.image_lower_cap
+                            + 2 * (c.y_min - self.image_lower_cap),
+                            a=np.log(3)
+                            / ((self.tail_midpoint_ratio * c.min) + self.eps),
+                            x0=c.min,
+                        )
+                        - self.eps
                     )
                 else:
                     # Between clusters
@@ -246,10 +250,13 @@ class ScaleClusterTransformer(BaseEstimator, TransformerMixin):
             last_c = c
 
         # Right tail
-        return inv_scaled_logistic(
-            val,
-            lower=self.image_upper_cap - 2 * (self.image_upper_cap - last_c.y_max),
-            upper=self.image_upper_cap,
-            a=np.log(3) / (self.tail_midpoint_ratio * last_c.max),
-            x0=last_c.max,
+        return (
+            inv_scaled_logistic(
+                val,
+                lower=self.image_upper_cap - 2 * (self.image_upper_cap - last_c.y_max),
+                upper=self.image_upper_cap,
+                a=np.log(3) / ((self.tail_midpoint_ratio * c.min) + self.eps),
+                x0=last_c.max,
+            )
+            - self.eps
         )
