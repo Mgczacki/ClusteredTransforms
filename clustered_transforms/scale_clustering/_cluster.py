@@ -21,9 +21,9 @@ class Cluster:
         self.min = m * np.min(self.points)  # The minimum point.
         self.max = m * np.max(self.points)  # The maximum point.
         self.w = self._get_w()  # The weight for the cluster.
-        self.n_w = None  # The normalized weight for the cluster.
-        self.y_max = None  # The image for the `self.max`.
-        self.y_min = None  # The image for the `self.min`.
+        self.n_w: float = np.nan  # The normalized weight for the cluster.
+        self.y_max: float = np.nan  # The image for the `self.max`.
+        self.y_min: float = np.nan  # The image for the `self.min`.
 
     def __repr__(self) -> str:
         return (
@@ -36,6 +36,7 @@ class Cluster:
 
     def _get_w(self):
         """Calcualate the weight for the cluster."""
+
         if self.mass == 1:
             return 1
         return np.log(max(1, self.std / np.abs(self.mean)) * self.mass) + 1
