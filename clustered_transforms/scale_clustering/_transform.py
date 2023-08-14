@@ -104,6 +104,7 @@ class ScaleClusterTransformer(BaseEstimator, TransformerMixin):
         y: Any, default = None
             Unused. Kept for compatibility.
         """
+
         self.clusters_: List[Cluster] = []
 
         negative_mask = X < 0
@@ -140,6 +141,7 @@ class ScaleClusterTransformer(BaseEstimator, TransformerMixin):
         y: Any, default = None
             Unused. Kept for compatibility.
         """
+
         self.fit(X)
         return self.transform(X)
 
@@ -153,6 +155,7 @@ class ScaleClusterTransformer(BaseEstimator, TransformerMixin):
         y: Any, default = None
             Unused. Kept for compatibility.
         """
+
         negative_mask = X < 0
 
         if np.any(negative_mask):
@@ -181,9 +184,12 @@ class ScaleClusterTransformer(BaseEstimator, TransformerMixin):
         y: Any, default = None
             Unused. Kept for compatibility.
         """
+
         return np.vectorize(self._inv)(X)
 
     def _generate_clusters(self, points: np.ndarray, negative: bool = False):
+        """Generate the clusters from provided data."""
+
         precision = self.precision
         cluster_orders_of_magnitude = self.cluster_orders_of_magnitude
 
@@ -206,6 +212,8 @@ class ScaleClusterTransformer(BaseEstimator, TransformerMixin):
         self.clusters_ = self.clusters_ + clusters
 
     def _init_ranges(self):
+        """Calculate the clsuters' ranges."""
+
         image_range = self.image_upper_cap - self.image_lower_cap
 
         if self.left_cap is None:
@@ -253,6 +261,8 @@ class ScaleClusterTransformer(BaseEstimator, TransformerMixin):
             cumulative_weight = cumulative_weight + c_displacement + c_inter
 
     def _f(self, val: float):
+        """Mapping function."""
+
         if np.isposinf(val):
             return self.image_upper_cap
 
@@ -309,6 +319,8 @@ class ScaleClusterTransformer(BaseEstimator, TransformerMixin):
         )
 
     def _inv(self, val: float):
+        """Inverse mapping function."""
+
         if self.image_lower_cap > val:
             raise ValueError("Provided value is below image lower cap.")
 
