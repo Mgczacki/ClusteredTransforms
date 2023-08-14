@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, List, Optional
 
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -20,22 +20,66 @@ class ScaleClusterTransformer(BaseEstimator, TransformerMixin):
 
     Parameters
     ----------
+    left_cap: float, default = None
+        The minimum `x` value that will be provided.
+        It sets a hard limit so that there is no uncertainty
+        or tails on the left of the projection.
+    right_cap: float, default = None
+        The maximum `x` value that will be provided.
+        It sets a hard limit so that there is no uncertainty
+        or tails on the right of the projection.
+    left_tail_uncertainty: float, default = 0.05
+        The portion in [0,1) of projective space to leave
+        for the left tail. [1]
+    right_tail_uncertainty: float, default = 0.05
+        The portion in [0,1) of projective space to leave
+        for the right tail. [1]
+    inter_cluster_uncertainty: float, default = 0.33
+        The portion in [0,1) of projective space (left after tails)
+        to divide in the portions between clusters.
+    image_lower_cap: float, default = 0
+        The asymptotic lower value of the projective space.
+    image_upper_cap: float, default = 1
+        The asymptotic upper value of the projective space.
+    precision: float, default = 1e-3
+        The minimum scale to detect.
+    cluster_orders_of_magnitude: float, default = 0.75
+        Cluster data that lies at most at `cluster_orders_of_magnitude`.
+        Bigger value makes bigger clusters.
+    tail_midpoint_ratio: float, default = 0.5
+        How much of a relative increase (from the last known point)
+        should pass before each tail reaches the midpoint of its alloted image.
+    eps: float, default = 1e-9
+        Numeric stability constant.
+    negative_strategy: str, default = "zero"
+        The strategy to treat negatives:
+        - None | "disallow" raises an exception when trying to transform them.
+        - "zero" zeroes out any negatives.
+        - "mirror" builds a mirror projection (currently unimplemented).
+
+    Notes
+    -----
+    [1] - The tails serve a dual purpose. Firstly, they allow for a full transformation
+          of the entire input space, leaving up the possibility for predictions that lie
+          outside of the known ranges of data. Even if such predictions would not be
+          useful, the tails also serve a similar purpose to label smoothing in logistic
+          representations of boolean variables.
     """
 
     def __init__(
         self,
-        left_cap=None,
-        right_cap=None,
-        left_tail_uncertainty=0.05,
-        right_tail_uncertainty=0.05,
-        inter_cluster_uncertainty=0.2,
-        image_lower_cap=0,
-        image_upper_cap=1,
-        precision=1e-3,
-        cluster_orders_of_magnitude=1,
-        tail_midpoint_ratio=0.5,
-        eps=1e-9,
-        negative_strategy="zero",
+        left_cap: Optional[float] = None,
+        right_cap: Optional[float] = None,
+        left_tail_uncertainty: float = 0.05,
+        right_tail_uncertainty: float = 0.05,
+        inter_cluster_uncertainty: float = 0.33,
+        image_lower_cap: float = 0,
+        image_upper_cap: float = 1,
+        precision: float = 1e-3,
+        cluster_orders_of_magnitude: float = 0.75,
+        tail_midpoint_ratio: float = 0.5,
+        eps: float = 1e-9,
+        negative_strategy: str = "zero",
     ) -> None:
         self.left_cap = left_cap
         self.right_cap = right_cap
@@ -139,7 +183,7 @@ class ScaleClusterTransformer(BaseEstimator, TransformerMixin):
         """
         return np.vectorize(self._inv)(X)
 
-    def _generate_clusters(self, points, negative=False):
+    def _generate_clusters(self, points: np.ndarray, negative: bool = False):
         precision = self.precision
         cluster_orders_of_magnitude = self.cluster_orders_of_magnitude
 
@@ -208,13 +252,25 @@ class ScaleClusterTransformer(BaseEstimator, TransformerMixin):
             c.y_max = c.y_min + c_displacement
             cumulative_weight = cumulative_weight + c_displacement + c_inter
 
-    def _f(self, val):
+    def _f(self, val: float):
+        if np.isposinf(val):
+            return self.image_upper_cap
+
+        if np.isneginf(val):
+            return self.image_lower_cap
+
+        if self.left_cap is not None and self.left_cap > val:
+            raise ValueError("Provided value is below left cap.")
+
+        if self.right_cap is not None and self.right_cap < val:
+            raise ValueError("Provided value is above right cap.")
+
         if np.isnan(val):
             return val
 
         val = val + self.eps
 
-        last_c = None
+        last_c: Any = None
 
         for c in self.clusters_:
             if val < c.min:
@@ -252,11 +308,17 @@ class ScaleClusterTransformer(BaseEstimator, TransformerMixin):
             x0=last_c.max,
         )
 
-    def _inv(self, val):
+    def _inv(self, val: float):
+        if self.image_lower_cap > val:
+            raise ValueError("Provided value is below image lower cap.")
+
+        if self.image_upper_cap < val:
+            raise ValueError("Provided value is above image upper cap.")
+
         if np.isnan(val):
             return val
 
-        last_c = None
+        last_c: Any = None
 
         for c in self.clusters_:
             if val < c.y_min:
