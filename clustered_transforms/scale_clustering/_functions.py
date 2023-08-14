@@ -56,6 +56,7 @@ def inv_logarithmic_interpolation(
     y2: float
         The y-coordinate of the second known point.
     """
+
     if y < y1 or y > y2:
         raise ValueError("Interpolated y value is outside the range of interpolation.")
 
@@ -94,6 +95,7 @@ def scaled_logistic(
     x0: float, default = 0
         The location parameter.
     """
+
     return lower + (upper - lower) / (1 + np.exp(-a * (x - x0)))
 
 
@@ -119,4 +121,5 @@ def inv_scaled_logistic(
     x0: float, default = 0
         The location parameter.
     """
+
     return x0 - (1 / a) * np.log((upper - lower) / (y - lower) - 1)
