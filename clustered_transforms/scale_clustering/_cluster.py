@@ -36,6 +36,7 @@ class Cluster:
 
     def _get_w(self):
         """Calcualate the weight for the cluster."""
+
         if self.mass == 1:
             return 1
         return np.log(max(1, self.std / np.abs(self.mean)) * self.mass) + 1
