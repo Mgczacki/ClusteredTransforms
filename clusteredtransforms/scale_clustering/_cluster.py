@@ -7,7 +7,9 @@ class Cluster:
     Parameters
     ----------
     points: list
-        A list of points.
+        A list of points. These are always positive.
+    negative: bool, default = False
+        If True, tells the constructor that the points should be taken as negatives.
     """
 
     def __init__(self, points: list, negative: bool = False):
@@ -29,7 +31,7 @@ class Cluster:
         return (
             f"Cluster - ["
             f"min: {self.min}, "
-            f"min: {self.max}, "
+            f"max: {self.max}, "
             f"y_min: {self.y_min}, "
             f"y_max: {self.y_max}]"
         )

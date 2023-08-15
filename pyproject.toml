@@ -3,8 +3,8 @@ requires = ["hatchling", "hatch-requirements-txt"]
 build-backend = "hatchling.build"
 
 [project]
-name = "clustered_transforms"
-description = 'Cluster-based spatial transformers.'
+name = "clusteredtransforms"
+description = 'Cluster-based spatial transforms.'
 readme = "README.md"
 requires-python = ">=3.7"
 keywords = []
@@ -31,12 +31,12 @@ allow-direct-references = true
 files = ["requirements.txt"]
 
 [project.urls]
-Documentation = "https://github.com/unknown/clustered-transforms#readme"
-Issues = "https://github.com/unknown/clustered-transforms/issues"
-Source = "https://github.com/unknown/clustered-transforms"
+Documentation = "https://github.com/mgczacki/clusteredtransforms#readme"
+Issues = "https://github.com/mgczacki/clusteredtransforms/issues"
+Source = "https://github.com/mgczacki/clusteredtransforms"
 
 [tool.hatch.version]
-path = "clustered_transforms/__about__.py"
+path = "clusteredtransforms/__about__.py"
 
 [tool.hatch.envs.default]
 dependencies = [
@@ -45,7 +45,7 @@ dependencies = [
   "hypothesis"
 ]
 [tool.hatch.envs.default.scripts]
-cov = "pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=clustered_transforms --cov=tests"
+cov = "pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=clusteredtransforms --cov=tests"
 no-cov = "cov --no-cov"
 
 [[tool.hatch.envs.test.matrix]]
@@ -55,7 +55,7 @@ python = ["37", "38", "39", "310", "311"]
 branch = true
 parallel = true
 omit = [
-  "clustered_transforms/__about__.py",
+  "clusteredtransforms/__about__.py",
 ]
 
 [tool.coverage.report]
