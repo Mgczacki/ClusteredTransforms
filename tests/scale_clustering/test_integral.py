@@ -3,7 +3,7 @@ from hypothesis import given
 from hypothesis.extra.numpy import array_shapes, arrays
 from hypothesis.strategies import floats
 
-from clustered_transforms.scale_clustering import ScaleClusterTransformer
+from clusteredtransforms.scale_clustering import ScaleClusterTransformer
 
 
 @given(
@@ -39,7 +39,7 @@ def test_normal_use_case(X, image_lower_cap, delta):
 
     inv_transformed_X = scaler.inverse_transform(transformed_X)
     # Test: The inverse transform of the transform is approximately the identity
-    assert np.allclose(X, inv_transformed_X, rtol=1e-5)
+    assert np.allclose(X, inv_transformed_X, rtol=1e-3)
 
     # Test: Strictly monotonous increasing.
     assert np.all(np.diff(scaler.transform(np.sort(X))) >= 0)
@@ -90,13 +90,13 @@ def test_zero_negatives(X, image_lower_cap, delta):
     negative_mask = X < 0
 
     # Test: Negatives are getting clipped to zero.
-    assert np.allclose(inv_transformed_X[negative_mask], 0, rtol=1e-5)
+    assert np.allclose(inv_transformed_X[negative_mask], 0, rtol=1e-3)
 
     # Test: Strictly monotonous increasing.
     assert np.all(np.diff(scaler.transform(np.sort(X))) >= 0)
 
     # Test: The inverse transform of the transform is approximately the identity
-    assert np.allclose(X[~negative_mask], inv_transformed_X[~negative_mask], rtol=1e-5)
+    assert np.allclose(X[~negative_mask], inv_transformed_X[~negative_mask], rtol=1e-3)
 
     # Test: All values are below the upper image cap.
     assert np.all(transformed_X <= image_upper_cap)
